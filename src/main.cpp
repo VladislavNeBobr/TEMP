@@ -106,8 +106,8 @@ void setup() {
   
 
 void loop() {
-  sensor1.requestTemperatures()         ;
-  sensor2.requestTemperatures()         ;
+  sensor1.requestTemperatures();
+  sensor2.requestTemperatures();
   Serial.println(String(sensor1.getTempCByIndex(0)) + ", " + String(sensor2.getTempCByIndex(0)));
   delay(2000);
 }
