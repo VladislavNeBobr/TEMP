@@ -14,7 +14,7 @@ OneWire t2(T2);
 DallasTemperature sensor1(&t1);
 DallasTemperature sensor2(&t2);
 
-const char* ssid = "TP-Link_24AD";
+const char* ssid = "netis";
 const char* pass = "11111111";
 
 AsyncWebServer server(80);
@@ -26,7 +26,6 @@ String htmlPage = R"rawliteral(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Температура</title>
-
 <style>
 body {font-family:Arial;background:#f4f6f8;text-align:center;padding:20px;}
 .container {display:flex;justify-content:center;gap:20px;flex-wrap:wrap;}
@@ -35,36 +34,39 @@ box-shadow:0 4px 10px rgba(0,0,0,0.1);width:200px;}
 .temp {font-size:32px;font-weight:bold;margin-top:10px;}
 </style>
 </head>
-
 <body>
-
-<h1>Температура датчиків</h1>
-
 <div class="container">
 <div class="card">
-<h3>Датчик 1</h3>
+<h3>Котел</h3>
 <div id="t1" class="temp">--</div>
 </div>
-
 <div class="card">
-<h3>Датчик 2</h3>
+<h3>Теплиця</h3>
 <div id="t2" class="temp">--</div>
 </div>
+<button onclick="fetch('/reset').catch(() => {})">Перезагрузка</button>
 </div>
-
 <script>
-async function updateTemps(){
-    let r = await fetch("/temps");
-    let data = await r.json();
 
-    document.getElementById("t1").innerText = data.t1 + " °C";
-    document.getElementById("t2").innerText = data.t2 + " °C";
+let loading = false;
+
+async function response() {
+    if (!document.hidden && !loading) {
+        loading = true;
+
+        try {
+            let response = await fetch("/temps").catch(() => {});
+            let r = await response.json();
+
+            document.getElementById("t1").innerText = r.t1 + " °C";
+            document.getElementById("t2").innerText = r.t2 + " °C";
+        } finally {
+            loading = false;
+        }
+    }
 }
-
-setInterval(updateTemps,2000);
-updateTemps();
+setInterval(response,2000);
 </script>
-
 </body>
 </html>
 )rawliteral";
@@ -97,6 +99,11 @@ void setup() {
     json+="}";
 
     request->send(200,"application/json",json);
+  });
+  server.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){
+
+    request->send(200, "text/plian", "resetted");
+    ESP.restart();
   });
   server.begin();
   sensor1.begin();
